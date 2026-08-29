@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>کاورساز پیشرفته</title>
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0B132B">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;800&family=Lalezar&family=Noto+Naskh+Arabic:wght@400;700&family=Aref+Ruqaa:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg: #0B132B;
+    --surface: #14213D;
+    --surface-2: #1F305E;
+    --line: #2D4275;
+    --gold: #FCA311;
+    --teal: #3A86FF;
+    --text: #F3EEE6;
+    --text-muted: #8D99AE;
+    --danger: #E63946;
+  }
+  *{ box-sizing: border-box; }
+  html{ height:100%; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: radial-gradient(1200px 800px at 50% -10%, #1A284F 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+    min-height: 100%;
+    padding: 18px 14px 110px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .wrap{ max-width: 480px; margin: 0 auto; }
+
+  header{ text-align:center; margin-bottom: 18px; }
+  header h1{ margin: 6px 0 4px; font-size: 26px; font-weight: 800; }
+  header p{ margin:0; color: var(--text-muted); font-size: 13.5px; line-height:1.7; }
+
+  .preset-manager {
+    background: var(--surface); border: 1px solid var(--teal); border-radius: 18px;
+    padding: 14px; margin-bottom: 18px; box-shadow: 0 4px 15px rgba(58, 134, 255, 0.15);
+  }
+  .preset-row { display: flex; gap: 10px; align-items: center; }
+  .preset-row select { flex: 1; font-weight: bold; color: var(--teal); }
+  .btn-save-preset, .btn-action {
+    background: var(--teal); color: #FFFFFF; border: none; padding: 10px 14px;
+    border-radius: 10px; font-weight: 800; cursor: pointer; font-size: 13px; flex:1;
+  }
+  .btn-action.shape { background: var(--gold); color: #000; }
+  .btn-del-preset, .btn-icon {
+    background: var(--danger); color: white; border: none; padding: 10px;
+    border-radius: 10px; font-weight: bold; cursor: pointer;
+  }
+  .btn-icon.secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); flex:1;}
+
+  .stage{
+    position: relative; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 22px; padding: 14px; margin-bottom: 18px;
+    box-shadow: 0 20px 50px -20px rgba(0,0,0,0.6);
+  }
+  .phone{
+    position: relative; width: 100%; aspect-ratio: 1080/1920; border-radius: 16px;
+    overflow: hidden; background: repeating-conic-gradient(#14213D 0% 25%, #1A2A4F 0% 50%) 50% / 24px 24px;
+  }
+  canvas{ width: 100%; height: 100%; display:block; touch-action: pan-y; }
+  canvas.crop-active{ touch-action: none; }
+
+  .stage .hint{ margin-top: 10px; font-size: 11.5px; color: var(--text-muted); text-align:center; opacity: .85; }
+  
+  .crop-toolbar{ margin-top: 12px; display: none; flex-direction: column; gap: 10px; }
+  .crop-toolbar.active{ display:flex; }
+  .crop-toolbar .zoom-row{ display:flex; align-items:center; gap:10px; }
+  .crop-toolbar .zoom-row span{ font-size: 16px; color: var(--text-muted); }
+  .crop-toolbar input[type=range]{ flex:1; }
+  .crop-toolbar .actions{ display:flex; gap:8px; }
+
+  .card{
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 18px; padding: 16px; margin-bottom: 14px;
+  }
+  .card h2{ margin: 0 0 10px; font-size: 15px; font-weight: 800; display:flex; align-items:center; gap:8px; }
+  .card h2 .dot{ width:8px; height:8px; border-radius:50%; background: var(--teal); box-shadow: 0 0 0 4px rgba(58, 134, 255, 0.15); }
+
+  .filebtn{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background: var(--surface-2); border: 1px dashed var(--line);
+    border-radius: 12px; padding: 12px 14px; cursor:pointer; font-size: 13.5px; color: var(--text); margin-bottom:8px;
+  }
+  .filebtn .status{ font-size: 12px; color: var(--teal); font-weight:700; max-width:100px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .filebtn .status.empty{ color: var(--text-muted); font-weight:500; }
+  input[type=file]{ display:none; }
+  .ghost-btn{ width:100%; padding: 11px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); color: var(--text); font-size: 13px; font-weight:700; cursor:pointer; display:none; }
+  .ghost-btn.visible{ display:block; }
+
+  textarea{ width:100%; min-height: 74px; resize: vertical; background: var(--surface-2); border:1px solid var(--line); color: var(--text); border-radius: 12px; padding: 12px 14px; font-family: inherit; font-size: 15px; }
+  
+  .row{ display:flex; gap:10px; margin-top: 12px; align-items:center;}
+  .row.wrap-row{ flex-wrap: wrap; }
+
+  select, input[type=number]{ background: var(--surface-2); color:var(--text); border:1px solid var(--line); border-radius: 10px; padding: 10px; font-family: inherit; font-size: 13.5px; }
+  select{ flex:1; }
+  input[type=number]{ width: 70px; text-align: center; }
+
+  .align-group{ display:flex; gap:6px; background: var(--surface-2); padding:4px; border-radius:10px; }
+  .align-group button{ flex:1; border:none; background:transparent; color: var(--text-muted); padding: 8px 0; border-radius: 8px; font-size: 16px; cursor:pointer; }
+  .align-group button.active{ background: var(--teal); color: #FFFFFF; font-weight:800; }
+
+  .field-label{ font-size:11.5px; color: var(--text-muted); margin: 0 0 6px; display:block; }
+  input[type=color]{ width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--line); padding:0; background:none; cursor:pointer; flex-shrink: 0;}
+  input[type=range]{ width:100%; accent-color: var(--teal); flex:1;}
+
+  /* استایل‌های مربوط به بخش آپلود فونت */
+  .details{ margin-top: 16px; border-top: 1px dashed var(--line); padding-top: 12px; }
+  summary{ cursor:pointer; font-size: 12.5px; color: var(--gold); font-weight:700; list-style: none; display:flex; align-items:center; gap:6px; }
+  summary::-webkit-details-marker{ display:none; }
+  summary:before{ content:'＋'; font-size:14px; }
+  details[open] summary:before{ content:'－'; }
+  .details-inner{ padding-top: 10px; }
+  .note-text{ font-size: 11.5px; color: var(--text-muted); margin: 0 0 8px; line-height:1.6; }
+
+  .bottom-bar{ position: fixed; left:0; right:0; bottom:0; background: linear-gradient(180deg, transparent, var(--bg) 30%); padding: 20px 14px 18px; z-index: 100; }
+  .bottom-bar .inner{ max-width: 480px; margin:0 auto; }
+  .dl-btn{ width:100%; padding: 15px; border:none; border-radius: 14px; background: linear-gradient(135deg, var(--teal), #2A6EE0); color: #FFFFFF; font-weight: 800; font-size: 15px; cursor:pointer; }
+  
+  #propertiesPanel { display: none; border-color: var(--gold); box-shadow: 0 4px 15px rgba(252, 163, 17, 0.1); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>کاورساز</h1>
+    <p>طراحی حرفه‌ای استوری و ریلز</p>
+  </header>
+
+  <div class="preset-manager">
+    <div class="field-label" style="color:var(--teal)">انتخاب قالب‌های ذخیره شده:</div>
+    <div class="preset-row">
+      <select id="presetSelect"><option value="new">🌟 ساخت کاور جدید</option></select>
+      <button class="btn-save-preset" id="savePresetBtn">ذخیره قالب</button>
+      <button class="btn-del-preset" id="delPresetBtn" style="display:none;">🗑</button>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="phone" id="phone">
+      <canvas id="canvas" width="1080" height="1920"></canvas>
+    </div>
+    <div class="crop-toolbar" id="cropToolbar">
+      <div class="zoom-row"><span>－</span><input type="range" id="zoomRange" min="0" max="100" value="0"><span>＋</span></div>
+      <div class="actions">
+        <button class="btn-action secondary" id="centerCropBtn">وسط‌چین</button>
+        <button class="btn-action" id="confirmCropBtn">تأیید برش ✓</button>
+      </div>
+    </div>
+    <div class="hint">برای جابه‌جایی یا ویرایش، روی متن یا شیپ کلیک کنید 👆</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="dot"></span> تصاویر</h2>
+    <label class="filebtn">
+      <span>عکس پس‌زمینه</span>
+      <span class="status empty" id="photoStatus">ندارد</span>
+      <input type="file" accept="image/*" id="photoInput">
+    </label>
+    <button class="ghost-btn" id="editCropBtn">✂️ ویرایش برش عکس</button>
+    <label class="filebtn" style="margin-top:10px;">
+      <span>قالب کاور (PNG)</span>
+      <span class="status empty" id="templateStatus">ندارد</span>
+      <input type="file" accept=".png,image/png" id="templateInput">
+    </label>
+  </div>
+
+  <div class="card">
+    <h2><span class="dot"></span> افزودن لایه جدید</h2>
+    <div class="row">
+      <button class="btn-action" id="addTextBtn">+ متن جدید</button>
+      <button class="btn-action shape" id="addShapeBtn">+ شیپ جدید</button>
+    </div>
+  </div>
+
+  <div class="card" id="propertiesPanel">
+    <h2><span class="dot" style="background:var(--gold)"></span> تنظیمات لایه انتخاب شده</h2>
+    
+    <div class="row" style="margin-bottom: 15px;">
+        <button class="btn-icon secondary" id="layerUpBtn" title="آوردن به جلو">⬆️ جلو</button>
+        <button class="btn-icon secondary" id="layerDownBtn" title="بردن به عقب">⬇️ عقب</button>
+        <button class="btn-icon" id="deleteLayerBtn" title="حذف لایه">🗑️ حذف</button>
+    </div>
+
+    <!-- پنل متن -->
+    <div id="textSettings" style="display:none;">
+      <textarea id="textInput" placeholder="متن خود را بنویسید..."></textarea>
+      <div class="row wrap-row">
+        <select id="fontSelect">
+          <option value="Vazirmatn">وزیرمتن — مدرن</option>
+          <option value="Lalezar">لاله‌زار — ضخیم</option>
+          <option value="Noto Naskh Arabic">نسخ — سنتی</option>
+        </select>
+        <div class="align-group" id="alignGroup">
+          <button data-align="right">↦</button>
+          <button data-align="center">↔</button>
+          <button data-align="left">↤</button>
+        </div>
+      </div>
+      <div class="row wrap-row" style="margin-top:16px;">
+        <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+          <span class="field-label">اندازه متن</span>
+          <input type="range" id="sizeRange" min="30" max="250" value="72">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:4px; align-items:center;">
+          <span class="field-label">رنگ</span>
+          <input type="color" id="colorPicker" value="#ffffff">
+        </div>
+      </div>
+      <div class="row wrap-row" style="margin-top:16px;">
+        <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+          <span class="field-label">ضخامت حاشیه متن</span>
+          <input type="range" id="strokeWidthRange" min="0" max="30" value="0">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:4px; align-items:center;">
+          <span class="field-label">رنگ حاشیه</span>
+          <input type="color" id="strokeColorPicker" value="#000000">
+        </div>
+      </div>
+      
+      <!-- بخش آپلود فونت -->
+      <details class="details">
+        <summary>وارد کردن فونت دلخواه</summary>
+        <div class="details-inner">
+          <p class="note-text">فونت‌های آپلودی در مرورگر ذخیره شده و همیشه در لیست فونت‌ها بالا در دسترس خواهند بود.</p>
+          <label class="filebtn">
+            <span>انتخاب فایل (ttf/otf)</span>
+            <span class="status empty" id="fontStatus">ندارد</span>
+            <input type="file" accept=".ttf,.otf,.woff,.woff2" id="fontInput">
+          </label>
+        </div>
+      </details>
+    </div>
+
+    <!-- پنل شیپ -->
+    <div id="shapeSettings" style="display:none;">
+      <div class="row wrap-row">
+        <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+          <span class="field-label">عرض (Width)</span>
+          <input type="range" id="shapeW" min="50" max="1000" value="400">
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+          <span class="field-label">ارتفاع (Height)</span>
+          <input type="range" id="shapeH" min="50" max="1000" value="150">
+        </div>
+      </div>
+      <div class="row wrap-row" style="margin-top:16px;">
+        <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+          <span class="field-label">گردی گوشه‌ها (Radius)</span>
+          <input type="range" id="shapeR" min="0" max="500" value="30">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:4px; align-items:center;">
+          <span class="field-label">رنگ زمینه</span>
+          <input type="color" id="shapeColor" value="#1A284F">
+        </div>
+      </div>
+      <div class="row wrap-row" style="margin-top:16px;">
+        <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+          <span class="field-label">ضخامت حاشیه</span>
+          <input type="range" id="shapeStrokeW" min="0" max="50" value="0">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:4px; align-items:center;">
+          <span class="field-label">رنگ حاشیه</span>
+          <input type="color" id="shapeStrokeColor" value="#FCA311">
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="bottom-bar">
+  <div class="inner">
+    <button class="dl-btn" id="downloadBtn">دانلود کاور نهایی</button>
+    <div style="text-align: center; color: var(--text-muted); font-size: 12px; margin-top: 12px; font-weight: 600; direction: ltr;">
+      Created by <span style="color: var(--teal);">Amin Behnejad</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==========================================
+// PWA Generator (آیکون اختصاصی وکتور)
+// ==========================================
+(function injectPWA() {
+  const iconSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#0B132B"/><rect x="130" y="100" width="250" height="340" fill="none" stroke="#F3EEE6" stroke-width="20" rx="28"/><rect x="230" y="210" width="160" height="130" fill="none" stroke="#FCA311" stroke-width="20" rx="16"/><rect x="190" y="240" width="160" height="130" fill="#3A86FF" rx="16"/><path d="M215 355 L255 295 L285 320 L315 270 L345 355 Z" fill="#1F305E"/><circle cx="310" cy="275" r="14" fill="#1F305E"/><text x="210" y="415" font-family="sans-serif" font-weight="900" font-size="80" fill="#FCA311">Aa</text><path d="M120 170 L150 170 M135 155 L135 185 M105 140 L125 160 M145 180 L165 200 M105 200 L125 180 M145 160 L165 140" stroke="#FCA311" stroke-width="12" stroke-linecap="round"/></svg>`;
+  const iconDataUrl = "data:image/svg+xml;base64," + btoa(iconSVG);
+  const manifestJSON = {
+    name: "کاورساز پیشرفته",
+    short_name: "کاورساز",
+    start_url: location.href,
+    display: "standalone",
+    background_color: "#0B132B",
+    theme_color: "#0B132B",
+    icons: [{ src: iconDataUrl, sizes: "512x512", type: "image/svg+xml" }]
+  };
+  const manifestDataUrl = "data:application/manifest+json;charset=utf-8," + encodeURIComponent(JSON.stringify(manifestJSON));
+  const manifestLink = document.createElement('link');
+  manifestLink.rel = 'manifest';
+  manifestLink.href = manifestDataUrl;
+  document.head.appendChild(manifestLink);
+  const appleIcon = document.createElement('link');
+  appleIcon.rel = 'apple-touch-icon';
+  appleIcon.href = iconDataUrl;
+  document.head.appendChild(appleIcon);
+})();
+
+// ==========================================
+// هسته اصلی برنامه
+// ==========================================
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const CW = 1080, CH = 1920;
+
+let bgImage = null, templateImage = null, templateBase64 = null; 
+let mode = 'normal', bgTransform = { baseScale: 1, zoom: 1, offsetX: 0, offsetY: 0 };
+let dragging = null, dragOffset = { x: 0, y: 0 };
+
+let layers = [];
+let activeLayer = null;
+
+const addTextBtn = document.getElementById('addTextBtn');
+const addShapeBtn = document.getElementById('addShapeBtn');
+const propertiesPanel = document.getElementById('propertiesPanel');
+const textSettings = document.getElementById('textSettings');
+const shapeSettings = document.getElementById('shapeSettings');
+
+addTextBtn.addEventListener('click', () => {
+  const newText = {
+    id: Date.now(), type: 'text', text: 'متن جدید', x: CW/2, y: CH/2, width: 900,
+    fontFamily: 'Vazirmatn', fontSize: 80, color: '#ffffff', strokeColor: '#000000', strokeWidth: 0, align: 'center', bounds: null
+  };
+  layers.push(newText);
+  setActiveLayer(newText);
+});
+
+addShapeBtn.addEventListener('click', () => {
+  const newShape = {
+    id: Date.now(), type: 'shape', x: CW/2 - 250, y: CH/2 - 100, w: 500, h: 200, r: 40,
+    color: '#1A284F', strokeColor: '#FCA311', strokeWidth: 5, bounds: null
+  };
+  layers.push(newShape);
+  setActiveLayer(newShape);
+});
+
+function setActiveLayer(layer) {
+  activeLayer = layer;
+  if (!layer) {
+    propertiesPanel.style.display = 'none';
+  } else {
+    propertiesPanel.style.display = 'block';
+    if (layer.type === 'text') {
+      textSettings.style.display = 'block';
+      shapeSettings.style.display = 'none';
+      
+      document.getElementById('textInput').value = layer.text;
+      document.getElementById('fontSelect').value = layer.fontFamily;
+      document.getElementById('sizeRange').value = layer.fontSize;
+      document.getElementById('colorPicker').value = layer.color;
+      document.getElementById('strokeWidthRange').value = layer.strokeWidth;
+      document.getElementById('strokeColorPicker').value = layer.strokeColor;
+      
+      document.querySelectorAll('#alignGroup button').forEach(b => {
+        b.classList.toggle('active', b.dataset.align === layer.align);
+      });
+    } else if (layer.type === 'shape') {
+      textSettings.style.display = 'none';
+      shapeSettings.style.display = 'block';
+      
+      document.getElementById('shapeW').value = layer.w;
+      document.getElementById('shapeH').value = layer.h;
+      document.getElementById('shapeR').value = layer.r;
+      document.getElementById('shapeColor').value = layer.color;
+      document.getElementById('shapeStrokeW').value = layer.strokeWidth;
+      document.getElementById('shapeStrokeColor').value = layer.strokeColor;
+    }
+  }
+  draw();
+}
+
+document.getElementById('textInput').addEventListener('input', e => { if(activeLayer && activeLayer.type === 'text') { activeLayer.text = e.target.value; draw(); }});
+document.getElementById('fontSelect').addEventListener('change', e => { if(activeLayer && activeLayer.type === 'text') { activeLayer.fontFamily = e.target.value; draw(); }});
+document.getElementById('sizeRange').addEventListener('input', e => { if(activeLayer && activeLayer.type === 'text') { activeLayer.fontSize = parseInt(e.target.value); draw(); }});
+document.getElementById('colorPicker').addEventListener('input', e => { if(activeLayer && activeLayer.type === 'text') { activeLayer.color = e.target.value; draw(); }});
+document.getElementById('strokeWidthRange').addEventListener('input', e => { if(activeLayer && activeLayer.type === 'text') { activeLayer.strokeWidth = parseInt(e.target.value); draw(); }});
+document.getElementById('strokeColorPicker').addEventListener('input', e => { if(activeLayer && activeLayer.type === 'text') { activeLayer.strokeColor = e.target.value; draw(); }});
+document.querySelectorAll('#alignGroup button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if(activeLayer && activeLayer.type === 'text') {
+      activeLayer.align = btn.dataset.align;
+      document.querySelectorAll('#alignGroup button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      draw();
+    }
+  });
+});
+
+document.getElementById('shapeW').addEventListener('input', e => { if(activeLayer && activeLayer.type === 'shape') { activeLayer.w = parseInt(e.target.value); draw(); }});
+document.getElementById('shapeH').addEventListener('input', e => { if(activeLayer && activeLayer.type === 'shape') { activeLayer.h = parseInt(e.target.value); draw(); }});
+document.getElementById('shapeR').addEventListener('input', e => { if(activeLayer && activeLayer.type === 'shape') { activeLayer.r = parseInt(e.target.value); draw(); }});
+document.getElementById('shapeColor').addEventListener('input', e => { if(activeLayer && activeLayer.type === 'shape') { activeLayer.color = e.target.value; draw(); }});
+document.getElementById('shapeStrokeW').addEventListener('input', e => { if(activeLayer && activeLayer.type === 'shape') { activeLayer.strokeWidth = parseInt(e.target.value); draw(); }});
+document.getElementById('shapeStrokeColor').addEventListener('input', e => { if(activeLayer && activeLayer.type === 'shape') { activeLayer.strokeColor = e.target.value; draw(); }});
+
+document.getElementById('layerUpBtn').addEventListener('click', () => {
+  if(!activeLayer) return;
+  const idx = layers.indexOf(activeLayer);
+  if(idx < layers.length - 1) {
+    [layers[idx], layers[idx+1]] = [layers[idx+1], layers[idx]];
+    draw();
+  }
+});
+document.getElementById('layerDownBtn').addEventListener('click', () => {
+  if(!activeLayer) return;
+  const idx = layers.indexOf(activeLayer);
+  if(idx > 0) {
+    [layers[idx-1], layers[idx]] = [layers[idx], layers[idx-1]];
+    draw();
+  }
+});
+document.getElementById('deleteLayerBtn').addEventListener('click', () => {
+  if(!activeLayer) return;
+  layers = layers.filter(l => l.id !== activeLayer.id);
+  setActiveLayer(null);
+});
+
+function wrapLines(str, maxWidth, font){
+  ctx.font = font;
+  const paragraphs = str.split('\n');
+  const lines = [];
+  for (const para of paragraphs) {
+    if (para.trim() === '') { lines.push(''); continue; }
+    const words = para.split(' ');
+    let current = '';
+    for (const word of words) {
+      const trial = current ? current + ' ' + word : word;
+      if (ctx.measureText(trial).width <= maxWidth || !current) current = trial;
+      else { lines.push(current); current = word; }
+    }
+    if (current) lines.push(current);
+  }
+  return lines;
+}
+
+function drawRoundedRect(ctx, x, y, w, h, r) {
+  if (w < 2 * r) r = w / 2;
+  if (h < 2 * r) r = h / 2;
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function draw(){
+  ctx.clearRect(0, 0, CW, CH);
+  ctx.fillStyle = '#0B132B';
+  ctx.fillRect(0, 0, CW, CH);
+
+  if (bgImage) {
+    ctx.save();
+    ctx.filter = 'blur(40px)';
+    const coverScale = Math.max(CW / bgImage.width, CH / bgImage.height);
+    const bgW = bgImage.width * coverScale;
+    const bgH = bgImage.height * coverScale;
+    ctx.drawImage(bgImage, (CW - bgW) / 2, (CH - bgH) / 2, bgW, bgH);
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(0, 0, CW, CH);
+    ctx.restore();
+
+    const scale = bgTransform.baseScale * bgTransform.zoom;
+    ctx.drawImage(bgImage, bgTransform.offsetX, bgTransform.offsetY, bgImage.width * scale, bgImage.height * scale);
+  }
+
+  if (templateImage) ctx.drawImage(templateImage, 0, 0, CW, CH);
+
+  layers.forEach(layer => {
+    ctx.save();
+    if (layer.type === 'shape') {
+      drawRoundedRect(ctx, layer.x, layer.y, layer.w, layer.h, layer.r);
+      if(layer.color !== 'transparent') { ctx.fillStyle = layer.color; ctx.fill(); }
+      if(layer.strokeWidth > 0) { ctx.lineWidth = layer.strokeWidth; ctx.strokeStyle = layer.strokeColor; ctx.stroke(); }
+      layer.bounds = { x: layer.x, y: layer.y, w: layer.w, h: layer.h };
+    } 
+    else if (layer.type === 'text' && layer.text.trim()) {
+      ctx.font = `800 ${layer.fontSize}px "${layer.fontFamily}"`;
+      ctx.direction = 'rtl'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      
+      const lines = wrapLines(layer.text, layer.width, ctx.font);
+      const lineHeight = layer.fontSize * 1.35;
+      let y = layer.y;
+      let minX = Infinity, maxX = -Infinity, startY = y - layer.fontSize;
+
+      lines.forEach(line => {
+        const w = ctx.measureText(line).width;
+        let x = layer.x;
+        if (layer.align === 'center') x = layer.x - (w / 2);
+        else if (layer.align === 'right') x = layer.x - w;
+
+        if(layer.strokeWidth > 0) {
+          ctx.strokeStyle = layer.strokeColor; ctx.lineWidth = layer.strokeWidth; ctx.lineJoin = 'round'; 
+          ctx.strokeText(line, x, y);
+        }
+        ctx.fillStyle = layer.color; ctx.fillText(line, x, y);
+        minX = Math.min(minX, x); maxX = Math.max(maxX, x + w);
+        y += lineHeight;
+      });
+      const pad = layer.strokeWidth;
+      layer.bounds = { x: minX - pad, y: startY - pad, w: (maxX - minX) + pad*2, h: (y - startY) + pad*2 };
+    }
+    ctx.restore();
+
+    if(activeLayer && activeLayer.id === layer.id && layer.bounds) {
+      ctx.save();
+      ctx.strokeStyle = '#FCA311'; ctx.lineWidth = 3; ctx.setLineDash([10, 10]);
+      ctx.strokeRect(layer.bounds.x - 5, layer.bounds.y - 5, layer.bounds.w + 10, layer.bounds.h + 10);
+      ctx.restore();
+    }
+  });
+
+  if (mode === 'crop') {
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 2;
+    for (let i = 1; i < 3; i++) {
+      ctx.beginPath(); ctx.moveTo((CW/3)*i, 0); ctx.lineTo((CW/3)*i, CH); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, (CH/3)*i); ctx.lineTo(CW, (CH/3)*i); ctx.stroke();
+    }
+    document.getElementById('cropToolbar').classList.add('active');
+    canvas.classList.add('crop-active');
+  } else {
+    document.getElementById('cropToolbar').classList.remove('active');
+    canvas.classList.remove('crop-active');
+  }
+  document.getElementById('editCropBtn').classList.toggle('visible', !!bgImage && mode === 'normal');
+}
+
+function canvasPt(e){
+  const rect = canvas.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return { x: (clientX - rect.left) * (CW / rect.width), y: (clientY - rect.top) * (CH / rect.height) };
+}
+
+canvas.addEventListener('mousedown', e => { startDrag(e, canvasPt(e)); });
+canvas.addEventListener('touchstart', e => { startDrag(e, canvasPt(e)); }, {passive:false});
+window.addEventListener('mousemove', e => { if(dragging) moveDrag(e, canvasPt(e)); });
+window.addEventListener('touchmove', e => { if(dragging) moveDrag(e, canvasPt(e)); }, {passive:false});
+window.addEventListener('mouseup', () => dragging = null);
+window.addEventListener('touchend', () => dragging = null);
+
+function startDrag(e, pt){
+  if (mode === 'crop' && bgImage) {
+    dragging = 'bg'; dragOffset = { x: pt.x - bgTransform.offsetX, y: pt.y - bgTransform.offsetY }; e.preventDefault();
+    return;
+  }
+  
+  if (mode === 'normal') {
+    let hitLayer = null;
+    for (let i = layers.length - 1; i >= 0; i--) {
+      const l = layers[i];
+      if (l.bounds && pt.x >= l.bounds.x && pt.x <= l.bounds.x + l.bounds.w && pt.y >= l.bounds.y && pt.y <= l.bounds.y + l.bounds.h) {
+        hitLayer = l; break;
+      }
+    }
+    
+    if (hitLayer) {
+      setActiveLayer(hitLayer);
+      dragging = 'layer';
+      dragOffset = { x: pt.x - hitLayer.x, y: pt.y - hitLayer.y };
+      e.preventDefault();
+    } else {
+      setActiveLayer(null);
+    }
+  }
+}
+
+function moveDrag(e, pt){
+  if (dragging === 'bg') {
+    bgTransform.offsetX = pt.x - dragOffset.x; bgTransform.offsetY = pt.y - dragOffset.y; 
+    bgTransform.offsetX = Math.min(CW - 100, Math.max(-(bgImage.width * bgTransform.baseScale * bgTransform.zoom) + 100, bgTransform.offsetX));
+    bgTransform.offsetY = Math.min(CH - 100, Math.max(-(bgImage.height * bgTransform.baseScale * bgTransform.zoom) + 100, bgTransform.offsetY));
+    draw(); e.preventDefault();
+  } else if (dragging === 'layer' && activeLayer) {
+    activeLayer.x = pt.x - dragOffset.x;
+    activeLayer.y = pt.y - dragOffset.y;
+    draw(); e.preventDefault();
+  }
+}
+
+document.getElementById('photoInput').addEventListener('change', async (e) => {
+  if (!e.target.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      bgImage = img;
+      bgTransform.baseScale = Math.min(CW / bgImage.width, CH / bgImage.height);
+      bgTransform.zoom = 1; bgTransform.offsetX = (CW - bgImage.width * bgTransform.baseScale) / 2; bgTransform.offsetY = (CH - bgImage.height * bgTransform.baseScale) / 2;
+      document.getElementById('zoomRange').value = 0; mode = 'crop';
+      document.getElementById('photoStatus').textContent = 'انتخاب شد ✓'; draw();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(e.target.files[0]);
+});
+
+document.getElementById('templateInput').addEventListener('change', async (e) => {
+  if (!e.target.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    templateBase64 = ev.target.result;
+    const img = new Image(); img.onload = () => { templateImage = img; document.getElementById('templateStatus').textContent = 'انتخاب شد ✓'; draw(); };
+    img.src = templateBase64;
+  };
+  reader.readAsDataURL(e.target.files[0]);
+});
+
+document.getElementById('zoomRange').addEventListener('input', (e) => { bgTransform.zoom = 1 + (e.target.value / 100) * 4; draw(); });
+document.getElementById('centerCropBtn').addEventListener('click', () => { bgTransform.offsetX = (CW - bgImage.width * bgTransform.baseScale * bgTransform.zoom) / 2; bgTransform.offsetY = (CH - bgImage.height * bgTransform.baseScale * bgTransform.zoom) / 2; draw(); });
+document.getElementById('confirmCropBtn').addEventListener('click', () => { mode = 'normal'; draw(); });
+document.getElementById('editCropBtn').addEventListener('click', () => { mode = 'crop'; draw(); });
+
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  const currentActive = activeLayer;
+  setActiveLayer(null); 
+  draw(); 
+  setTimeout(() => {
+    const link = document.createElement('a'); link.download = 'CoverPro.png';
+    link.href = canvas.toDataURL('image/png'); link.click();
+    setActiveLayer(currentActive); 
+  }, 100);
+});
+
+// ==========================================
+// توابع فونت و ذخیره‌سازی قالب
+// ==========================================
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+  });
+}
+
+async function loadSavedFonts() {
+  const saved = JSON.parse(localStorage.getItem('customFonts') || '[]');
+  const select = document.getElementById('fontSelect');
+  for(let font of saved) {
+    try {
+      const face = new FontFace(font.name, `url(${font.data})`);
+      await face.load();
+      document.fonts.add(face);
+      if(!Array.from(select.options).some(opt => opt.value === font.name)) {
+        const opt = document.createElement('option');
+        opt.value = font.name;
+        opt.text = `⭐ فونت ${font.name.split('_')[1]}`;
+        opt.style.fontFamily = font.name;
+        select.appendChild(opt);
+      }
+    } catch(e) { console.error("Error loading font", e); }
+  }
+}
+
+document.getElementById('fontInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    const base64 = await fileToBase64(file);
+    const shortHash = Math.random().toString(36).substr(2, 4);
+    const fontName = 'Custom_' + shortHash;
+    const face = new FontFace(fontName, `url(${base64})`);
+    
+    await face.load();
+    document.fonts.add(face);
+    
+    const saved = JSON.parse(localStorage.getItem('customFonts') || '[]');
+    saved.push({ name: fontName, data: base64 });
+    localStorage.setItem('customFonts', JSON.stringify(saved));
+    
+    const opt = document.createElement('option');
+    opt.value = fontName;
+    opt.text = `⭐ فونت ${shortHash}`;
+    opt.style.fontFamily = fontName;
+    document.getElementById('fontSelect').appendChild(opt);
+    
+    document.getElementById('fontSelect').value = fontName;
+    document.getElementById('fontStatus').textContent = 'ذخیره شد ✓';
+    document.getElementById('fontStatus').classList.remove('empty');
+    
+    if(activeLayer && activeLayer.type === 'text') {
+       activeLayer.fontFamily = fontName;
+       draw();
+    }
+  } catch (err) {
+    alert('متاسفانه ذخیره فونت با مشکل مواجه شد.');
+  }
+});
+
+function loadPresets() {
+  const presets = JSON.parse(localStorage.getItem('coverPresetsAdv') || '{}');
+  const sel = document.getElementById('presetSelect');
+  sel.innerHTML = '<option value="new">🌟 ساخت کاور جدید</option>';
+  for(let name in presets) {
+    const opt = document.createElement('option'); opt.value = name; opt.text = `📁 ${name}`; sel.appendChild(opt);
+  }
+}
+
+document.getElementById('savePresetBtn').addEventListener('click', () => {
+  const name = prompt('یک نام برای قالب انتخاب کنید:');
+  if(!name) return;
+  const presets = JSON.parse(localStorage.getItem('coverPresetsAdv') || '{}');
+  presets[name] = { templateBase64, layers: JSON.parse(JSON.stringify(layers)) }; 
+  localStorage.setItem('coverPresetsAdv', JSON.stringify(presets));
+  loadPresets(); document.getElementById('presetSelect').value = name;
+  document.getElementById('delPresetBtn').style.display = 'block'; alert('ذخیره شد!');
+});
+
+document.getElementById('presetSelect').addEventListener('change', e => {
+  const val = e.target.value;
+  if(val === 'new') { location.reload(); return; }
+  const p = JSON.parse(localStorage.getItem('coverPresetsAdv') || '{}')[val];
+  if(p) {
+    layers = p.layers; setActiveLayer(null); document.getElementById('delPresetBtn').style.display = 'block';
+    templateBase64 = p.templateBase64;
+    if(templateBase64) {
+      const img = new Image(); img.onload = () => { templateImage = img; draw(); }; img.src = templateBase64;
+      document.getElementById('templateStatus').textContent = 'لود شد ✓';
+    } else draw();
+  }
+});
+
+document.getElementById('delPresetBtn').addEventListener('click', () => {
+  const val = document.getElementById('presetSelect').value;
+  if(confirm(`آیا از حذف "${val}" مطمئن هستید؟`)) {
+    const presets = JSON.parse(localStorage.getItem('coverPresetsAdv') || '{}'); delete presets[val];
+    localStorage.setItem('coverPresetsAdv', JSON.stringify(presets)); location.reload();
+  }
+});
+
+// راه‌اندازی اولیه
+document.fonts.ready.then(draw);
+loadSavedFonts();
+loadPresets();
+draw();
+</script>
+</body>
+</html>
